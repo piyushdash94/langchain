@@ -49,17 +49,32 @@ def test_output_fixing_parser_parse(
     n: int = (
         base_parser.attemp_count_before_success
     )  # Success on the (n+1)-th attempt  # noqa
-    base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
+    base_parser = base_parser.__class__(attemp_count_before_success=n)
+    captured: Dict[str, Any] = {}
+
+    def capture(input: Dict[str, Any]) -> str:
+        captured.update(input)
+        return input["completion"]
+
     parser = OutputFixingParser[str](
         parser=base_parser,
         max_retries=n,  # n times to retry, that is, (n+1) times call
-        retry_chain=RunnablePassthrough(),
+        retry_chain=RunnableLambda(capture),
         legacy=False,
     )
     # test
     assert parser.parse("completion") == "parsed"
     assert base_parser.parse_count == n + 1
-    # TODO: test whether "instructions" is passed to the retry_chain
+
+    try:
+        expected_instructions = base_parser.get_format_instructions()
+    except NotImplementedError:
+        expected_instructions = None
+
+    if expected_instructions is None:
+        assert "instructions" not in captured
+    else:
+        assert captured["instructions"] == expected_instructions
 
 
 def test_output_fixing_parser_from_llm() -> None:
@@ -93,16 +108,31 @@ async def test_output_fixing_parser_aparse(
     n: int = (
         base_parser.attemp_count_before_success
     )  # Success on the (n+1)-th attempt   # noqa
-    base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
+    base_parser = base_parser.__class__(attemp_count_before_success=n)
+    captured: Dict[str, Any] = {}
+
+    def capture(input: Dict[str, Any]) -> str:
+        captured.update(input)
+        return input["completion"]
+
     parser = OutputFixingParser[str](
         parser=base_parser,
         max_retries=n,  # n times to retry, that is, (n+1) times call
-        retry_chain=RunnablePassthrough(),
+        retry_chain=RunnableLambda(capture),
         legacy=False,
     )
     assert (await parser.aparse("completion")) == "parsed"
     assert base_parser.parse_count == n + 1
-    # TODO: test whether "instructions" is passed to the retry_chain
+
+    try:
+        expected_instructions = base_parser.get_format_instructions()
+    except NotImplementedError:
+        expected_instructions = None
+
+    if expected_instructions is None:
+        assert "instructions" not in captured
+    else:
+        assert captured["instructions"] == expected_instructions
 
 
 def test_output_fixing_parser_parse_fail() -> None:
