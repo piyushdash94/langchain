@@ -1152,7 +1152,7 @@ class FalkorDBVector(VectorStore):
         Args:
             embedding: The `Embeddings` model you would like to use
             database: The name of the existing graph/database you
-              would like to intialize
+              would like to initialize
             node_label: The label of the node you want to initialize.
             embedding_node_property: The name of the property you
               want your embeddings to be stored in.
