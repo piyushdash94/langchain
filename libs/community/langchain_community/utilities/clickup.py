@@ -590,7 +590,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
         data = response.json()
 
         if "id" in data:
-            self.list_id = data["id"]
+            self.folder_id = data["id"]
         return data
 
     def run(self, mode: str, query: str) -> str:
